@@ -1,414 +1,315 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Fine Fettle CT — August 2026 Allocation vs Demand Plan</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CT Allocation Dashboard</title>
 <style>
   :root{
-    --navy:#0B1F3A;
-    --navy-light:#132A4F;
-    --red:#BB511C;
-    --red-light:#E0724A;
-    --bg:#F3F0ED;
-    --card:#FFFFFF;
-    --text:#1A1A1A;
-    --muted:#6B7280;
-    --balanced:#1F7A4D;
-    --over:#B45309;
-    --under:#B91C1C;
+    --bg:#f6f7f9; --card:#ffffff; --border:#e2e5ea; --text:#1c2230; --muted:#5b6472;
+    --accent:#2f6f4f; --accent-bg:#eaf5ee; --warn:#b8860b; --warn-bg:#fdf6e3;
+    --bad:#b3402f; --bad-bg:#fbeae7; --head-bg:#1c2230; --head-text:#f4f6f8;
+    --tbl-head:#eef1f5; --stripe:#fafbfc;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14171c; --card:#1b1f26; --border:#2a2f38; --text:#e7eaee; --muted:#9aa3b0;
+      --accent:#5fbd8a; --accent-bg:#173226; --warn:#e0b34d; --warn-bg:#332a12;
+      --bad:#e17a68; --bad-bg:#3a1f1b; --head-bg:#0e1116; --head-text:#f4f6f8;
+      --tbl-head:#22262e; --stripe:#1e222a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171c; --card:#1b1f26; --border:#2a2f38; --text:#e7eaee; --muted:#9aa3b0;
+    --accent:#5fbd8a; --accent-bg:#173226; --warn:#e0b34d; --warn-bg:#332a12;
+    --bad:#e17a68; --bad-bg:#3a1f1b; --head-bg:#0e1116; --head-text:#f4f6f8;
+    --tbl-head:#22262e; --stripe:#1e222a;
   }
   *{box-sizing:border-box;}
-  body{
-    font-family:'Albert Sans', Arial, sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    margin:0;
-    padding:24px;
-  }
-  .header{
-    background:var(--navy);
-    color:#fff;
-    padding:24px 28px;
-    border-radius:10px;
-    margin-bottom:20px;
-  }
-  .header h1{margin:0 0 6px 0; font-size:22px;}
-  .header .sub{color:#C9D3E3; font-size:13px; margin-bottom:4px;}
-  .header .status{
-    display:inline-block;
-    background:var(--red);
-    color:#fff;
-    padding:3px 10px;
-    border-radius:20px;
-    font-size:12px;
-    font-weight:600;
-    margin-top:6px;
-  }
-  .summary-row{
-    display:flex;
-    gap:16px;
-    margin-bottom:20px;
-    flex-wrap:wrap;
-  }
-  .summary-card{
-    flex:1;
-    min-width:220px;
-    background:var(--card);
-    border-radius:10px;
-    padding:16px 18px;
-    border-left:5px solid var(--navy);
-  }
-  .summary-card .label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
-  .summary-card .value{font-size:26px; font-weight:700; color:var(--navy); margin:4px 0;}
-  .summary-card .detail{font-size:12px; color:var(--muted);}
-  .note-banner{
-    background:#FFF7ED;
-    border-left:4px solid var(--red);
-    padding:10px 14px;
-    border-radius:6px;
-    font-size:13px;
-    margin-bottom:24px;
-    color:#7C3A0F;
-  }
-  section{
-    background:var(--card);
-    border-radius:10px;
-    padding:20px 22px;
-    margin-bottom:22px;
-  }
-  section h2{
-    color:var(--navy);
-    font-size:15px;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    border-bottom:2px solid var(--red);
-    padding-bottom:8px;
-    margin-top:0;
-  }
-  section .subtitle{font-size:12px; color:var(--muted); margin-bottom:14px;}
-  table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:12.5px;
-  }
-  th, td{
-    padding:7px 9px;
-    text-align:right;
-    border-bottom:1px solid #E5E7EB;
-  }
-  th:first-child, td:first-child{text-align:left;}
-  th{
-    background:var(--navy);
-    color:#fff;
-    font-weight:600;
-    font-size:11px;
-    text-transform:uppercase;
-    letter-spacing:.03em;
-  }
-  td.wk3{background:#FDEEE6; font-weight:600;}
-  tr.total-row td{font-weight:700; background:#F1F2F4;}
-  .pct-good{color:var(--balanced); font-weight:700;}
-  .pct-over{color:var(--over); font-weight:700;}
-  .pct-under{color:var(--under); font-weight:700;}
-  .notes-cell{text-align:left; font-size:11.5px; color:#374151; max-width:340px;}
-  .signal-balanced{color:var(--balanced); font-weight:700;}
-  .signal-over{color:var(--over); font-weight:700;}
-  .signal-under{color:var(--under); font-weight:700;}
-  .obs-block{
-    border-left:4px solid var(--red);
-    background:#FAFAF9;
-    padding:12px 16px;
-    margin-bottom:14px;
-    border-radius:0 6px 6px 0;
-  }
-  .obs-block h3{margin:0 0 6px 0; font-size:13px; color:var(--navy);}
-  .obs-block p{margin:0; font-size:13px; color:#374151; line-height:1.5;}
-  .batch-tag-ondeck{
-    display:inline-block;
-    background:var(--red);
-    color:#fff;
-    font-size:10px;
-    font-weight:700;
-    padding:2px 7px;
-    border-radius:10px;
-    margin-left:6px;
-  }
-  .batch-tag-flag{
-    display:inline-block;
-    background:#374151;
-    color:#fff;
-    font-size:10px;
-    font-weight:700;
-    padding:2px 7px;
-    border-radius:10px;
-    margin-left:6px;
-  }
-  .batch-tag-resolved{
-    display:inline-block;
-    background:var(--balanced);
-    color:#fff;
-    font-size:10px;
-    font-weight:700;
-    padding:2px 7px;
-    border-radius:10px;
-    margin-left:6px;
-  }
-  .legend{font-size:11px; color:var(--muted); margin-top:14px;}
-  .swatch{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle;}
+  body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; margin:0; padding:24px 16px 64px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  .draft-banner{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; margin-bottom:16px; text-align:center; letter-spacing:.02em;}
+  header{background:var(--head-bg); color:var(--head-text); border-radius:14px; padding:24px 28px; margin-bottom:20px;}
+  header h1{margin:0 0 8px; font-size:22px; font-weight:700;}
+  header .weeks{font-size:14px; opacity:.9; margin-bottom:6px;}
+  header .meta{font-size:12.5px; opacity:.72; line-height:1.5;}
+  .kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:18px 0 22px;}
+  .kpi{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px;}
+  .kpi .label{font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600;}
+  .kpi .value{font-size:28px; font-weight:800; margin:6px 0 2px;}
+  .kpi .sub{font-size:12.5px; color:var(--muted);}
+  .pace{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 18px; font-size:13.5px; margin-bottom:26px; color:var(--text);}
+  .pace b{color:var(--accent);}
+  section{margin-bottom:34px;}
+  .sec-head{display:flex; align-items:baseline; gap:10px; margin-bottom:4px;}
+  .sec-num{background:var(--accent); color:#fff; font-weight:700; font-size:12px; padding:3px 9px; border-radius:20px;}
+  h2{font-size:16.5px; margin:0; font-weight:700;}
+  .sec-sub{font-size:12.5px; color:var(--muted); margin:4px 0 12px;}
+  .tbl-scroll{overflow-x:auto; border:1px solid var(--border); border-radius:10px; background:var(--card);}
+  table{border-collapse:collapse; width:100%; min-width:760px; font-size:13px;}
+  thead th{background:var(--tbl-head); text-align:left; padding:9px 10px; font-weight:600; color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; border-bottom:1px solid var(--border);}
+  tbody td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--stripe);}
+  tbody tr.total td{font-weight:700; background:var(--tbl-head); border-top:2px solid var(--border);}
+  td.num{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  td.notes{max-width:420px; font-size:12.3px; color:var(--muted); line-height:1.5;}
+  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap;}
+  .b-good{background:var(--accent-bg); color:var(--accent);}
+  .b-warn{background:var(--warn-bg); color:var(--warn);}
+  .b-bad{background:var(--bad-bg); color:var(--bad);}
+  .obs{background:var(--card); border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:10px; padding:14px 18px; margin-bottom:12px;}
+  .obs h3{margin:0 0 6px; font-size:13.5px; letter-spacing:.02em;}
+  .obs p{margin:0; font-size:13px; color:var(--muted); line-height:1.55;}
+  .obs.flag{border-left-color:var(--warn);}
+  .footnote{font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.6;}
+  .wk-assumption{background:var(--accent-bg); border:1px solid var(--accent); border-radius:10px; padding:12px 16px; font-size:12.8px; color:var(--text); margin-bottom:24px; line-height:1.55;}
+  .wk-assumption b{color:var(--accent);}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>Fine Fettle · August 2026 Allocation vs Demand Plan</h1>
-  <div class="sub">Weeks: 8/8 ✓ &nbsp;·&nbsp; 8/15 ✓ &nbsp;·&nbsp; 8/22 ✓ &nbsp;·&nbsp; 8/29 &nbsp;&nbsp; (3 of 4 weeks complete)</div>
-  <div class="sub">Updated: 08/21/26 — Week 3 orders through 8/20 delivery + 8/21 cultivation inventory (8:30am)</div>
-  <span class="status">IN PROGRESS</span>
-</div>
 
-<div class="summary-row">
-  <div class="summary-card">
-    <div class="label">WS vs H2 Forecast (MTD)</div>
-    <div class="value">77.9%</div>
-    <div class="detail">12,315u / 15,814u</div>
-  </div>
-  <div class="summary-card">
-    <div class="label">Retail vs Retail Demand (MTD)</div>
-    <div class="value">66.8%</div>
-    <div class="detail">9,923u / 14,853u</div>
-  </div>
-  <div class="summary-card">
-    <div class="label">Combined vs Combined Target (MTD)</div>
-    <div class="value">72.5%</div>
-    <div class="detail">22,238u / 30,667u</div>
-  </div>
-</div>
+<div class="wrap">
+  <div class="draft-banner">DRAFT — for Chris Nava's review only · not published · not final</div>
 
-<div class="note-banner">
-  3 of 4 weeks in (~75% of the month elapsed) — WS (77.9%) and Combined (72.5%) are now tracking right around the pace-line you'd expect; Retail (66.8%) is trailing slightly but closed the gap significantly from last week. No delivery-date corrections this week; WS orders dated 8/18 and 8/20 and the Retail order dated 8/19 all fall cleanly into Week 3 per the standing delivery-date convention.
-</div>
+  <header>
+    <h1>Fine Fettle · August 2026 Allocation vs Demand Plan — CT</h1>
+    <div class="weeks">Weeks: 8/8 ✓ · 8/15 ✓ · 8/22 ✓ · 8/29 ✓&nbsp; (4 of 4 weeks complete) &nbsp;·&nbsp; Status: IN PROGRESS — pending Chris's review &nbsp;·&nbsp; Data freshness: WS orders through 8/27 delivery, Retail through 8/26 delivery, cultivation inventory as of 8/27/26</div>
+    <div class="meta">WS: APEX Product Sales, Sales Rep = Chris Nava &nbsp;·&nbsp; Retail: APEX Product Sales, Sales Rep = Spencer EJ Antrum &nbsp;·&nbsp; WS Target: H2 Forecast (CT), Aug = 15,814u &nbsp;·&nbsp; Retail Target: Retail Demand (CT), Aug (flat vs July) = 14,853u</div>
+  </header>
 
-<section>
-  <h2>Section 1 — Wholesale Orders Delivered</h2>
-  <div class="subtitle">APEX (Sales Rep: Chris Nava) · vs H2 Monthly Forecast (Aug target 15,814u) · orange column = Week 3 (8/22)</div>
-  <table>
-    <tr>
-      <th>Category</th><th>Unit Price (avg)</th><th>8/8</th><th>8/15</th><th class="wk3">8/22</th><th>8/29</th>
-      <th>Aug Cases</th><th>Aug Units</th><th>Aug Revenue</th><th>H2 Target</th><th>vs H2 %</th>
-    </tr>
-    <tr>
-      <td>3.5g Flower</td><td>$14.21</td><td>2,490</td><td>600</td><td class="wk3">1,095</td><td>—</td>
-      <td>139.5</td><td>4,185</td><td>$59,470.65</td><td>4,409</td><td class="pct-under">94.9%</td>
-    </tr>
-    <tr>
-      <td>7g Flower</td><td>$21.19</td><td>1,320</td><td>450</td><td class="wk3">1,410</td><td>—</td>
-      <td>106.0</td><td>3,180</td><td>$67,402.50</td><td>2,231</td><td class="pct-good">142.5%</td>
-    </tr>
-    <tr>
-      <td>1g Prerolls</td><td>$5.63</td><td>2,340</td><td>510</td><td class="wk3">420</td><td>—</td>
-      <td>109.0</td><td>3,270</td><td>$18,420.30</td><td>2,214</td><td class="pct-good">147.7%</td>
-    </tr>
-    <tr>
-      <td>0.5g 7pk PRJs</td><td>$18.00</td><td>600</td><td>90</td><td class="wk3">60</td><td>—</td>
-      <td>25.0</td><td>750</td><td>$13,500.00</td><td>1,907</td><td class="pct-under">39.3%</td>
-    </tr>
-    <tr>
-      <td>1g Vapes (510)</td><td>$27.50</td><td>360</td><td>180</td><td class="wk3">-</td><td>—</td>
-      <td>18.0</td><td>540</td><td>$14,850.00</td><td>2,558</td><td class="pct-under">21.1%</td>
-    </tr>
-    <tr>
-      <td>1g Disposables (AURA)</td><td>$30.00</td><td>-</td><td>300</td><td class="wk3">90</td><td>—</td>
-      <td>13.0</td><td>390</td><td>$11,700.00</td><td>2,495</td><td class="pct-under">15.6%</td>
-    </tr>
-    <tr class="total-row">
-      <td>TOTAL</td><td>$15.05</td><td>7,110</td><td>2,130</td><td class="wk3">3,075</td><td>-</td>
-      <td>410.5</td><td>12,315</td><td>$185,343.45</td><td>15,814</td><td>77.9%</td>
-    </tr>
-  </table>
-  <p class="notes-cell" style="margin-top:10px;">
-    <strong>Week 3 notes:</strong> Middle Ground and Umami OG/Cloud 9 led 3.5g Flower across RISE (both locations), INSA - New Haven, and both Shangri-La locations. Irish Goodbye was the clear 7g Flower leader (660u), driven heavily by the two RISE locations and Shangri-La - Plainville. Revenue reflects the standing RISE - Orange / RISE - Branford 10% discount on their combined $5,325 in 3.5g Flower orders this week ($5,325 list → $4,792.50 net, -$532.50). AURA posted its second straight week of real WS volume (90u, all Kush Mints) via INSA - Hartford and Shangri-La - Norwalk Main. 1g Vapes (510) had zero WS orders this week, down from 180u last week — see Section 6 pricing/market note.
-  </p>
-</section>
-
-<section>
-  <h2>Section 2 — Retail Orders Delivered</h2>
-  <div class="subtitle">APEX (Sales Rep: Spencer EJ Antrum) · 9 FF locations · vs Retail Demand (Aug target 14,853u)</div>
-  <table>
-    <tr>
-      <th>Category</th><th>Unit Price (avg)</th><th>8/8</th><th>8/15</th><th class="wk3">8/22</th><th>8/29</th>
-      <th>Aug Units</th><th>Aug Cases</th><th>Aug Revenue</th><th>Retail Target</th><th>vs Target %</th>
-    </tr>
-    <tr>
-      <td>3.5g Flower</td><td>$14.41</td><td>650</td><td>-</td><td class="wk3">990</td><td>—</td>
-      <td>1,640</td><td>54.7</td><td>$23,630.00</td><td>4,192</td><td class="pct-under">39.1%</td>
-    </tr>
-    <tr>
-      <td>7g Flower</td><td>$21.94</td><td>794</td><td>870</td><td class="wk3">1,208</td><td>—</td>
-      <td>2,872</td><td>95.7</td><td>$63,016.00</td><td>2,625</td><td class="pct-good">109.4%</td>
-    </tr>
-    <tr>
-      <td>1g Prerolls</td><td>$5.63</td><td>1,380</td><td>330</td><td class="wk3">330</td><td>—</td>
-      <td>2,040</td><td>68.0</td><td>$11,475.00</td><td>1,933</td><td class="pct-good">105.5%</td>
-    </tr>
-    <tr>
-      <td>0.5g 7pk PRJs</td><td>$16.90</td><td>540</td><td>540</td><td class="wk3">581</td><td>—</td>
-      <td>1,661</td><td>55.4</td><td>$28,076.00</td><td>3,150</td><td class="pct-under">52.7%</td>
-    </tr>
-    <tr>
-      <td>1g Vapes (510)</td><td>$27.50</td><td>120</td><td>-</td><td class="wk3">90</td><td>—</td>
-      <td>210</td><td>7.0</td><td>$5,775.00</td><td>540</td><td class="pct-under">38.9%</td>
-    </tr>
-    <tr>
-      <td>1g Disposables (AURA)</td><td>$30.00</td><td>-</td><td>540</td><td class="wk3">960</td><td>—</td>
-      <td>1,500</td><td>50.0</td><td>$45,000.00</td><td>2,413</td><td class="pct-good">62.2%</td>
-    </tr>
-    <tr class="total-row">
-      <td>TOTAL</td><td>$17.83</td><td>3,484</td><td>2,280</td><td class="wk3">4,159</td><td>-</td>
-      <td>9,923</td><td>330.8</td><td>$176,972.00</td><td>14,853</td><td>66.8%</td>
-    </tr>
-  </table>
-  <p class="notes-cell" style="margin-top:10px;">
-    <strong>Week 3 notes:</strong> AURA had its best retail week of the month — 960u across Kush Mints (510u) and Tahoe OG (450u), led by Willimantic, Newington, and Manchester. 7g Flower stayed hot at retail (1,208u), again led by Irish Goodbye. 0.5g 7pk PRJs picked up meaningfully (581u vs 540u the prior two weeks), driven mostly by Golden Hour (221u) and Couch Surfer (150u) — both restricted-menu SKUs feeding retail-only demand. 1g Vapes (510) returned to retail for the first time since Week 1 (90u: Wedding Cake, Purple Urkle).
-  </p>
-</section>
-
-<section>
-  <h2>Section 3 — August Summary (WS vs H2 Forecast)</h2>
-  <div class="subtitle">Wholesale only · 3 of 4 weeks complete</div>
-  <table>
-    <tr><th>Category</th><th>H2 Target</th><th>Aug WS Units</th><th>vs Target</th><th>vs %</th><th>Result</th></tr>
-    <tr><td>3.5g Flower</td><td>4,409</td><td>4,185</td><td>(224)</td><td>94.9%</td><td>~ Just Below (MTD)</td></tr>
-    <tr><td>7g Flower</td><td>2,231</td><td>3,180</td><td>949</td><td class="pct-good">142.5%</td><td>✓ Exceeding Forecast</td></tr>
-    <tr><td>1g Prerolls</td><td>2,214</td><td>3,270</td><td>1,056</td><td class="pct-good">147.7%</td><td>✓ Exceeding Forecast</td></tr>
-    <tr><td>0.5g 7pk PRJs</td><td>1,907</td><td>750</td><td>(1,157)</td><td class="pct-under">39.3%</td><td>⚠ Below (MTD)</td></tr>
-    <tr><td>1g Vapes (510)</td><td>2,558</td><td>540</td><td>(2,018)</td><td class="pct-under">21.1%</td><td>⚠ Below (MTD)</td></tr>
-    <tr><td>1g Disposables (AURA)</td><td>2,495</td><td>390</td><td>(2,105)</td><td class="pct-under">15.6%</td><td>⚠ Below (MTD)</td></tr>
-    <tr class="total-row"><td>TOTAL</td><td>15,814</td><td>12,315</td><td>(3,499)</td><td>77.9%</td><td>77.9% of H2 Forecast MTD</td></tr>
-  </table>
-</section>
-
-<section>
-  <h2>Section 4 — Combined Total (WS + Retail)</h2>
-  <table>
-    <tr><th>Category</th><th>WS Units</th><th>WS Revenue</th><th>Retail Units</th><th>Retail Revenue</th><th>Total Units</th><th>Total Revenue</th><th>Combined Target</th><th>vs Target %</th></tr>
-    <tr><td>3.5g Flower</td><td>4,185</td><td>$59,471</td><td>1,640</td><td>$23,630</td><td>5,825</td><td>$83,101</td><td>8,601</td><td class="pct-under">67.7%</td></tr>
-    <tr><td>7g Flower</td><td>3,180</td><td>$67,403</td><td>2,872</td><td>$63,016</td><td>6,052</td><td>$130,419</td><td>4,856</td><td class="pct-good">124.6%</td></tr>
-    <tr><td>1g Prerolls</td><td>3,270</td><td>$18,420</td><td>2,040</td><td>$11,475</td><td>5,310</td><td>$29,895</td><td>4,147</td><td class="pct-good">128.0%</td></tr>
-    <tr><td>0.5g 7pk PRJs</td><td>750</td><td>$13,500</td><td>1,661</td><td>$28,076</td><td>2,411</td><td>$41,576</td><td>5,057</td><td class="pct-under">47.7%</td></tr>
-    <tr><td>1g Vapes (510)</td><td>540</td><td>$14,850</td><td>210</td><td>$5,775</td><td>750</td><td>$20,625</td><td>3,098</td><td class="pct-under">24.2%</td></tr>
-    <tr><td>1g Disposables (AURA)</td><td>390</td><td>$11,700</td><td>1,500</td><td>$45,000</td><td>1,890</td><td>$56,700</td><td>4,908</td><td class="pct-under">38.5%</td></tr>
-    <tr class="total-row"><td>TOTAL</td><td>12,315</td><td>$185,343</td><td>9,923</td><td>$176,972</td><td>22,238</td><td>$362,315</td><td>30,667</td><td>72.5%</td></tr>
-  </table>
-</section>
-
-<section>
-  <h2>Section 5 — Cultivation Inventory &amp; Availability</h2>
-  <div class="subtitle">Snapshot as of 8/21/26, 8:30am (CT Inventory Report) · Weeks of Supply = Available ÷ (Combined Aug Target ÷ 4 weeks) · Reserved/On Order confirmed via invoice reference Fine_F-539</div>
-  <table>
-    <tr><th>Category</th><th>WS Target</th><th>Retail Target</th><th>Combined Target</th><th>Available</th><th>Reserved / On Order</th><th>Weeks of Supply</th><th>Signal</th></tr>
-    <tr><td>3.5g Flower</td><td>4,409</td><td>4,192</td><td>8,601</td><td>17,616</td><td>0</td><td>8.2</td><td class="signal-over">⚠ Overstocked</td></tr>
-    <tr><td>7g Flower</td><td>2,231</td><td>2,625</td><td>4,856</td><td>11,343</td><td>90</td><td>9.3</td><td class="signal-over">⚠ Overstocked</td></tr>
-    <tr><td>1g Prerolls</td><td>2,214</td><td>1,933</td><td>4,147</td><td>35,665</td><td>0</td><td>34.4</td><td class="signal-over">⚠ Overstocked</td></tr>
-    <tr><td>0.5g 7pk PRJs</td><td>1,907</td><td>3,150</td><td>5,057</td><td>4,084</td><td>0</td><td>3.2</td><td class="signal-balanced">Balanced</td></tr>
-    <tr><td>1g Vapes (510)</td><td>2,558</td><td>540</td><td>3,098</td><td>3,390</td><td>0</td><td>4.4</td><td class="signal-balanced">Balanced</td></tr>
-    <tr><td>1g Disposables (AURA)</td><td>2,495</td><td>2,413</td><td>4,908</td><td>4,144</td><td>60</td><td>3.4</td><td class="signal-balanced">Balanced</td></tr>
-    <tr class="total-row"><td>TOTAL</td><td>15,814</td><td>14,853</td><td>30,667</td><td>76,242</td><td>150</td><td>9.9</td><td></td></tr>
-  </table>
-  <p class="notes-cell" style="margin-top:10px;">
-    <strong>Reserved/On Order note:</strong> the 8/21 cultivation report confirms next week's (8/29) pipeline via invoice reference Fine_F-539 — 90u 7g Flower (60u Early Bird, 30u Super Chill) and 60u AURA (30u Cake OG, 30u Kush Mints), 150u total, matching the WS pipeline order submitted for 8/25 delivery to INSA - New Haven.
-  </p>
-  <p class="notes-cell" style="margin-top:6px;">
-    <strong>Available figure caveat:</strong> per standing policy, any batch testing below 20% THC is restricted from the wholesale menu (retail-only). This week's 3.5g Flower Available figure (17,616u) includes the new Bright Side batch (3,857u, 18.98% THC, now confirmed retail-only) — true WS-available 3.5g Flower is 13,759u, which brings Weeks of Supply down to roughly 6.4 (still Overstocked, just less severely than the headline 8.2 suggests). Same treatment applies to 1g Prerolls (true WS-available 25,175u, excluding Mint Condition, Homebody, and the new on-deck Jai Alai batch — all sub-20%) and 0.5g 7pk PRJs (true WS-available only ~1,569u, excluding Atomic Tangerine, Golden Hour, Mint Condition, and Early Bird) — both meaningfully thinner than the headline Available figures suggest.
-  </p>
-</section>
-
-<section>
-  <h2>Section 6 — Strategic Observations</h2>
-  <div class="subtitle">Forward-looking considerations · operations · channel planning · based on Weeks 1–3 of August</div>
-
-  <div class="obs-block">
-    <h3>FLOWER INVENTORY EXTREMELY HEALTHY — WIDE VARIETY ACROSS 3.5g AND 7g</h3>
-    <p>Cultivation is carrying 8 active 3.5g Flower SKUs (Mint Condition, Cloud 9, Date Night, Fritterz, Jai Alai, Middle Ground, Umami OG, Early Bird/Glow Up, plus the new Bright Side) and 6 active 7g Flower SKUs. Both categories remain comfortably Overstocked (8.2 and 9.3 weeks of supply respectively), but WS attainment is strong in both — 7g Flower is running at 142.5% of H2 Forecast MTD and 3.5g Flower has closed nearly all the way to target (94.9%) after a strong Week 3. This is the flower-variety-drives-pull-through pattern playing out as expected.</p>
+  <div class="wk-assumption">
+    <b>Week-boundary assumption (please confirm):</b> following the established Sat-labeled convention (Week 3 "8/22" counted WS deliveries dated 8/18 &amp; 8/20 and Retail deliveries dated 8/19), Week 4 "8/29" is built from <b>all WS deliveries dated 8/25 and 8/27</b> and <b>all Retail deliveries dated 8/26</b> — the full contents of this week's two source files. The 9/1-dated WS Pipeline file is next week's business and is used only for the Section 5 Reserved/On Order figure, not counted in any Week 4 total. Flag if this doesn't match your intent.
   </div>
 
-  <div class="obs-block">
-    <h3>0.5g 7pk PRJs — LIMITED WS SKU OPTIONS, PIPELINE COMING</h3>
-    <p>Only 6 SKUs are currently on the books for 0.5g 7pk PRJs, and 4 of them (Atomic Tangerine, Golden Hour, Mint Condition, Early Bird) are Restricted/retail-only — leaving true WS-available inventory around 1,569u against a 1,264u/week combined pace, much tighter than the headline 3.2-week Balanced signal implies. Per Chris's note, 6 additional batches are currently in labeling and 1 in testing — worth watching closely for when those clear, since WS 0.5g 7pk attainment is sitting at just 39.3% of H2 Forecast MTD and needs the SKU depth to catch up.</p>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Wholesale vs H2 Forecast</div>
+      <div class="value">93.1%</div>
+      <div class="sub">14,715u / 15,814u target</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Retail vs Retail Demand</div>
+      <div class="value">87.7%</div>
+      <div class="sub">13,029u / 14,853u target</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Combined vs Combined Target</div>
+      <div class="value">90.5%</div>
+      <div class="sub">27,744u / 30,667u target</div>
+    </div>
   </div>
 
-  <div class="obs-block">
-    <h3>AURA — THIRD WS STRAIN LIVE, TWO MORE IN BRAND REGISTRY</h3>
-    <p>Cake OG (2,028u) has been added as the third AURA strain on the wholesale menu alongside Tahoe OG and Kush Mints, and both channels continue to build momentum — WS moved 90u and Retail posted its best AURA week yet at 960u. Sour Diesel and Pineapple Express are currently passing through brand registry, with hope they clear and become available over the next week, which would bring the WS-available AURA lineup to 5 of 6 planned SKUs.</p>
+  <div class="pace">
+    With all 4 weeks now in, WS closed the month at <b>93.1%</b> of H2 Forecast and Retail at <b>87.7%</b> of Retail Demand (Combined <b>90.5%</b>) — WS is essentially on pace (7g Flower and 1g Prerolls ran well above target and carried the category), while Retail's gap is concentrated almost entirely in 3.5g Flower (47.7% of target) and 0.5g 7pk PRJs (64.7%); a few more days remain before month-end close.
   </div>
 
-  <div class="obs-block">
-    <h3>1g VAPES (510) &amp; AURA DISPOSABLES — MARKET COMPRESSION PRESSURE ON PRICE POINT</h3>
-    <p>WS Vape (510) sales dropped to zero this week (from 180u the week before) and remain the weakest wholesale performer at 21.1% of H2 Forecast MTD; AURA WS sits at 15.6% MTD, though retail AURA volume has been strong (960u this week). Broader market context applies to both categories: 1g 510-thread vapes, 1g distillate disposables, and live-resin vapes and disposables are showing up consistently on competitor retail menus (AGL, Rythm, Rodeo, Select, Loud, CTPharma, The Goods, Airo, Brix) priced between roughly $32–$50, while Fine Fettle's comffy Vape (510) sits at $27.50 WS / $55 retail and AURA sits at $30 WS / $60 MSRP — both above where the bulk of the competitive set has settled. A smaller group of brands (Tyson 2.0, Affinity, Loud, CTPharma) are still holding $55+ price points, suggesting a premium tier remains viable — but worth a pricing/promo conversation for both categories given where the broader market has compressed to.</p>
-  </div>
+  <!-- SECTION 1 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">1</span><h2>Wholesale Orders Delivered</h2></div>
+    <div class="sec-sub">APEX (Sales Rep: Chris Nava) · 4 weeks: 8/8, 8/15, 8/22, 8/29 · vs H2 Monthly Forecast (Aug)</div>
+    <div class="tbl-scroll">
+    <table>
+      <thead><tr>
+        <th>Category</th><th>Avg $/u</th><th>8/8</th><th>8/15</th><th>8/22</th><th>8/29</th>
+        <th>Aug Units</th><th>Aug Revenue</th><th>Target (u)</th><th>vs Target</th><th>Notes</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td>3.5g Flower</td><td class="num">$14.08</td><td class="num">2,490</td><td class="num">600</td><td class="num">1,095</td><td class="num">900</td>
+          <td class="num">5,085</td><td class="num">$71,593.65</td><td class="num">4,409</td><td class="num"><span class="badge b-good">115.3%</span></td>
+          <td class="notes">Week 1: Umami OG and Glow Up co-led (510u each); Irish Goodbye moved 480u despite zero cultivation inventory, and Early Bird's batch is down to 26u — both flagged in Section 6. HI! PEOPLE - Derby (210u) and the four Zen Leaf locations (180u each) were top accounts. Includes Crisp - East Hartford's new Fri 8/7 delivery. Revenue reflects RISE - Orange and RISE - Branford's standing 10% discount on 3.5g Flower ($4,020 list → $3,618 net, -$402). Week 2: Umami OG again led (150u across Higher Collective, RISE, and INSA); Cloud 9 landed as a brand-new SKU (4,211u available) and Irish Goodbye moved another 60u (BUDR - Danbury Federal Rd) despite still showing zero available. Revenue again reflects the RISE - Orange / RISE - Branford 10% discount on their combined $3,450 in 3.5g orders ($3,450 list → $3,105 net, -$345). Week 3: Middle Ground and Umami OG/Cloud 9 led 3.5g Flower across RISE (both locations), INSA - New Haven, and both Shangri-La locations. Revenue reflects the standing RISE - Orange / RISE - Branford 10% discount on their combined $5,325 in 3.5g Flower orders this week ($5,325 list → $4,792.50 net, -$532.50). <b>Week 4:</b> Date Night (360u) and Umami OG (240u) led across both RISE locations and High Profile (Stratford, Canton); Fritterz, Cloud 9, Middle Ground, and Mint Condition also moved. Revenue reflects the standing RISE - Orange / RISE - Branford 10% discount on their combined $10,470 in 3.5g Flower orders this week ($10,470 list → $9,423 net, -$1,047).</td>
+        </tr>
+        <tr>
+          <td>7g Flower</td><td class="num">$21.08</td><td class="num">1,320</td><td class="num">450</td><td class="num">1,410</td><td class="num">480</td>
+          <td class="num">3,660</td><td class="num">$77,160.00</td><td class="num">2,231</td><td class="num"><span class="badge b-good">164.1%</span></td>
+          <td class="notes">Week 1: Date Night was the top SKU (510u) — flag: it now shows zero available in the 8/6 inventory report despite this week's volume (see Section 6). HI! PEOPLE - Derby (150u), Shangri-La - Plainville, and both RISE locations (90u each) rounded out top accounts. Week 2: Super Chill and Date Night led across RISE, INSA, and BUDR. Early Bird and Irish Goodbye both landed large new batches (3,410u and 1,208u) this week, pushing 7g Flower's Weeks of Supply from 3.5 to 9.3 — flipping the category from Balanced to Overstocked. Week 3: Irish Goodbye was the clear 7g Flower leader (660u), driven heavily by the two RISE locations and Shangri-La - Plainville. <b>Week 4:</b> Super Chill (180u) led, with Date Night, Early Bird, and Glow Up also moving across High Profile (Stratford, Canton), both RISE locations, and INSA - New Haven.</td>
+        </tr>
+        <tr>
+          <td>1g Prerolls</td><td class="num">$5.63</td><td class="num">2,340</td><td class="num">510</td><td class="num">420</td><td class="num">330</td>
+          <td class="num">3,600</td><td class="num">$20,265.30</td><td class="num">2,214</td><td class="num"><span class="badge b-good">162.6%</span></td>
+          <td class="notes">Week 1: FreeStyle, Jai Alai, Umami OG, and Irish Goodbye all cleared 330u each; broad SKU participation. High Profile - Stratford (240u) and Higher Collective - Torrington (210u) led accounts. Includes 1 sample case (Jai Alai, HI! PEOPLE - Derby, 30u @ $0.30) counted per Chris's direction. Week 2: Umami OG, Fritterz, Cloud 9, Pillow Talk, Couch Surfer, and Irish Goodbye all moved in smaller volumes; category overstock deepened to 35.1 weeks of supply. Week 3: Pillow Talk (120u) led, with FreeStyle, Cloud 9, Fritterz, and Super Chill also moving across Affinity (both locations), INSA, Shangri-La, RISE, and Rodeo. <b>Week 4:</b> Jai Alai (120u) led, with Date Night, Couch Surfer, and Umami OG also moving across High Profile (Stratford, Canton) and both RISE locations — broad SKU participation continues; category overstock remains a demand-side signal, not a production gap (see Section 6).</td>
+        </tr>
+        <tr>
+          <td>0.5g 7pk PRJs</td><td class="num">$18.00</td><td class="num">600</td><td class="num">90</td><td class="num">60</td><td class="num">210</td>
+          <td class="num">960</td><td class="num">$17,280.00</td><td class="num">1,907</td><td class="num"><span class="badge b-bad">50.3%</span></td>
+          <td class="notes">Week 1: Couch Surfer remains the only real mover (540 of 600u) — same single-SKU dependency flagged in July. High Profile - Hamden (90u) and High Profile - Stratford (60u) led accounts. Week 2: only Couch Surfer moved again (30u, BUDR - Danbury Federal Rd); Golden Hour's On-Deck flag looked backwards in that inventory export. Correction: an additional 60u from CLONE CANNABIS - Seymour was caught after the initial Week 2 pull. Week 3: Couch Surfer and Irish Goodbye each moved 30u (RISE - Branford, Shangri-La - Plainville) — still the same limited-SKU dependency. <b>Week 4:</b> Irish Goodbye (150u) led — and for the first time this month shows real cultivation inventory (424u total) rather than the zero-stock condition flagged in Weeks 1-3; Couch Surfer also moved (60u) across High Profile (Stratford, Canton), both RISE locations, and Clone Cannabis - Norwich.</td>
+        </tr>
+        <tr>
+          <td>1g Vapes (510)</td><td class="num">$27.50</td><td class="num">360</td><td class="num">180</td><td class="num">0</td><td class="num">180</td>
+          <td class="num">720</td><td class="num">$19,800.00</td><td class="num">2,558</td><td class="num"><span class="badge b-bad">28.1%</span></td>
+          <td class="notes">Week 1: Purple Urkle (180u) carried the week across multiple BUDR locations; Strawberry Cough, Wedding Cake, and Blue Dream also moved. High Profile - Canton (60u) was the top account. Week 2: Blue Dream, Strawberry Cough, and Wedding Cake moved via Higher Collective - New London; Purple Urkle added one more case at BUDR - Danbury Federal Rd. Week 3: zero WS Vape (510) orders — see Section 6 market-compression note. <b>Week 4:</b> WS Vape (510) orders returned after Week 3's zero week — Wedding Cake (90u) led, with Blue Dream, Strawberry Cough, and Purple Urkle also moving across both RISE locations and Clone Cannabis (Meriden, Norwich); still the weakest wholesale category vs target.</td>
+        </tr>
+        <tr>
+          <td>1g Disposables (AURA)</td><td class="num">$30.00</td><td class="num">0</td><td class="num">300</td><td class="num">90</td><td class="num">300</td>
+          <td class="num">690</td><td class="num">$20,700.00</td><td class="num">2,495</td><td class="num"><span class="badge b-bad">27.7%</span></td>
+          <td class="notes">Week 1: zero units — Tahoe OG hit cultivation inventory 8/6, too late to order. Week 2: first real WS pull — 270u (150u Tahoe OG, 120u Kush Mints) across RISE, INSA - New Haven, and CRISP. Week 3: 90u, all Kush Mints, via INSA - Hartford and Shangri-La - Norwalk Main; Cake OG added as a third WS AURA strain. <b>Week 4:</b> Tahoe OG (120u) led, with Cake OG and Kush Mints also moving across both RISE locations, Clone Cannabis (Meriden, Norwich), and INSA - New Haven — third straight week of real WS AURA volume, though still well behind target.</td>
+        </tr>
+        <tr class="total">
+          <td>TOTAL</td><td class="num">—</td><td class="num">7,110</td><td class="num">2,130</td><td class="num">3,075</td><td class="num">2,400</td>
+          <td class="num">14,715</td><td class="num">$226,798.95</td><td class="num">15,814</td><td class="num"><span class="badge b-warn">93.1%</span></td><td class="notes"></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
 
-  <div class="obs-block">
-    <h3>1g PREROLLS — OVERSTOCK EASES SLIGHTLY BUT STAYS ELEVATED AT 34+ WEEKS</h3>
-    <p>Weeks of supply came down modestly from 35.1 to 34.4 as sell-through outpaced new batch arrivals for the first time this month, but the category remains far and away the deepest overstock story. Demand continues to be strong in relative terms — 147.7% of H2 Forecast MTD, the best-performing WS category this week — reinforcing that this is a production/allocation question rather than a demand problem.</p>
-  </div>
+  <!-- SECTION 2 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">2</span><h2>Retail Orders Delivered</h2></div>
+    <div class="sec-sub">APEX (Sales Rep: Spencer EJ Antrum) · 9 FF locations · vs Retail Demand (Aug, flat vs July)</div>
+    <div class="tbl-scroll">
+    <table>
+      <thead><tr>
+        <th>Category</th><th>Avg $/u</th><th>8/8</th><th>8/15</th><th>8/22</th><th>8/29</th>
+        <th>Aug Units</th><th>Aug Revenue</th><th>Target (u)</th><th>vs Target</th><th>Notes</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td>3.5g Flower</td><td class="num">$14.10</td><td class="num">650</td><td class="num">0</td><td class="num">990</td><td class="num">360</td>
+          <td class="num">2,000</td><td class="num">$28,205.00</td><td class="num">4,192</td><td class="num"><span class="badge b-bad">47.7%</span></td>
+          <td class="notes">Week 1: includes small unit-level sales (Date Night 6u, Irish Goodbye 14u). Week 2: no 3.5g Flower retail orders. Week 3: 3.5g Flower retail orders resumed (990u) — no single dominant SKU. <b>Week 4:</b> Bright Side (270u) was the dominant retail mover, consistent with its retail-only sub-20% THC status; Glow Up, Cloud 9, and Middle Ground also moved in smaller volumes across 9 stores — category remains the widest gap to target in the whole plan.</td>
+        </tr>
+        <tr>
+          <td>7g Flower</td><td class="num">$21.86</td><td class="num">794</td><td class="num">870</td><td class="num">1,208</td><td class="num">450</td>
+          <td class="num">3,322</td><td class="num">$72,616.00</td><td class="num">2,625</td><td class="num"><span class="badge b-good">126.6%</span></td>
+          <td class="notes">Week 1: Date Night and Glow Up across most stores plus small Golden Hour unit sales. Week 2: Date Night, Glow Up, Super Chill, and Early Bird all moved — best retail week yet at that point. Week 3: Irish Goodbye again the strongest mover. <b>Week 4:</b> Early Bird (150u) led, with Homebody and Glow Up also strong across most of the 9 stores.</td>
+        </tr>
+        <tr>
+          <td>1g Prerolls</td><td class="num">$5.61</td><td class="num">1,380</td><td class="num">330</td><td class="num">330</td><td class="num">420</td>
+          <td class="num">2,460</td><td class="num">$13,800.00</td><td class="num">1,933</td><td class="num"><span class="badge b-good">127.3%</span></td>
+          <td class="notes">Week 1: broad participation, no single SKU dominant. Week 2: Couch Surfer, Pillow Talk, Cloud 9, and Jai Alai moved. Week 3: Pillow Talk (120u) led, with Couch Surfer, Jai Alai, Fritterz, and Umami OG also moving. <b>Week 4:</b> Jai Alai (120u) led, with Pillow Talk, Homebody, and Couch Surfer also moving broadly across stores.</td>
+        </tr>
+        <tr>
+          <td>0.5g 7pk PRJs</td><td class="num">$17.36</td><td class="num">540</td><td class="num">540</td><td class="num">581</td><td class="num">376</td>
+          <td class="num">2,037</td><td class="num">$35,352.00</td><td class="num">3,150</td><td class="num"><span class="badge b-bad">64.7%</span></td>
+          <td class="notes">Week 1: Early Bird and Mint Condition leading; still constrained by limited WS-menu SKU availability. Week 2: Irish Goodbye and Couch Surfer led broadly, with Golden Hour and Atomic Tangerine also moving — best retail week of the month so far. Week 3: Golden Hour (221u) and Couch Surfer (150u) led. <b>Week 4:</b> Umami OG (180u) led, with Irish Goodbye, Atomic Tangerine, Mint Condition, and Early Bird also moving — steady retail demand despite the category's tight true WS-available pool (see Section 5).</td>
+        </tr>
+        <tr>
+          <td>1g Vapes (510)</td><td class="num">$27.50</td><td class="num">120</td><td class="num">0</td><td class="num">90</td><td class="num">120</td>
+          <td class="num">330</td><td class="num">$9,075.00</td><td class="num">540</td><td class="num"><span class="badge b-bad">61.1%</span></td>
+          <td class="notes">Week 1: Blue Dream and Strawberry Cough moved across multiple stores. Week 2: no Vape (510) retail orders. Week 3: Vape (510) returned to retail (90u: Wedding Cake, Purple Urkle) — see Section 6 market-compression note. <b>Week 4:</b> Purple Urkle (60u) led, with Strawberry Cough and Wedding Cake also moving — second straight week of retail Vape (510) activity.</td>
+        </tr>
+        <tr>
+          <td>1g Disposables (AURA)</td><td class="num">$30.00</td><td class="num">0</td><td class="num">540</td><td class="num">960</td><td class="num">1,380</td>
+          <td class="num">2,880</td><td class="num">$86,400.00</td><td class="num">2,413</td><td class="num"><span class="badge b-good">119.4%</span></td>
+          <td class="notes">Week 1: zero units — same stockout as WS. Week 2: first retail AURA pull — all 9 stores cleared 60u each. Week 3: best retail AURA week yet (960u: Kush Mints 510u, Tahoe OG 450u). <b>Week 4:</b> best retail AURA week yet (1,380u) — Pineapple Express (480u) led, followed by Cake OG and Sour Diesel (270u each), Kush Mints (240u), and Tahoe OG (120u); Sour Diesel and Pineapple Express are already moving at retail while their WS brand-registry status is unconfirmed (see Section 6).</td>
+        </tr>
+        <tr class="total">
+          <td>TOTAL</td><td class="num">—</td><td class="num">3,484</td><td class="num">2,280</td><td class="num">4,159</td><td class="num">3,106</td>
+          <td class="num">13,029</td><td class="num">$245,448.00</td><td class="num">14,853</td><td class="num"><span class="badge b-warn">87.7%</span></td><td class="notes"></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
 
-  <div class="obs-block">
-    <h3>BRIGHT SIDE (3.5g FLOWER) — FIRST SUB-20% RESTRICTED BATCH IN THIS CATEGORY</h3>
-    <p>A brand-new 3.5g Flower batch, Bright Side (3,857u, created 8/17, 18.98% THC), is confirmed retail-only per standing policy — any batch testing below 20% THC is restricted from the wholesale menu. This is the first time that's applied to a 3.5g Flower batch (previously only seen in 1g Prerolls and 0.5g 7pk PRJs); true WS-available 3.5g Flower is 13,759u rather than the 17,616u headline figure. No action needed — flagging just so the WS menu and Section 5 caveat stay consistent going forward.</p>
-  </div>
+  <!-- SECTION 3 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">3</span><h2>August Summary (WS vs H2 Forecast)</h2></div>
+    <div class="sec-sub">Wholesale only · vs H2 Monthly Forecast · 4 of 4 weeks complete</div>
+    <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Category</th><th>Target (u)</th><th>Aug WS Units</th><th>vs Target (u)</th><th>vs Target %</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>3.5g Flower</td><td class="num">4,409</td><td class="num">5,085</td><td class="num">+676</td><td class="num">115.3%</td><td><span class="badge b-good">✓ On/Above Forecast</span></td></tr>
+        <tr><td>7g Flower</td><td class="num">2,231</td><td class="num">3,660</td><td class="num">+1,429</td><td class="num">164.1%</td><td><span class="badge b-good">✓ On/Above Forecast</span></td></tr>
+        <tr><td>1g Prerolls</td><td class="num">2,214</td><td class="num">3,600</td><td class="num">+1,386</td><td class="num">162.6%</td><td><span class="badge b-good">✓ On/Above Forecast</span></td></tr>
+        <tr><td>0.5g 7pk PRJs</td><td class="num">1,907</td><td class="num">960</td><td class="num">-947</td><td class="num">50.3%</td><td><span class="badge b-bad">⚠ Below (month-end)</span></td></tr>
+        <tr><td>1g Vapes (510)</td><td class="num">2,558</td><td class="num">720</td><td class="num">-1,838</td><td class="num">28.1%</td><td><span class="badge b-bad">⚠ Below (month-end)</span></td></tr>
+        <tr><td>1g Disposables (AURA)</td><td class="num">2,495</td><td class="num">690</td><td class="num">-1,805</td><td class="num">27.7%</td><td><span class="badge b-bad">⚠ Below (month-end)</span></td></tr>
+        <tr class="total"><td>TOTAL</td><td class="num">15,814</td><td class="num">14,715</td><td class="num">-1,099</td><td class="num">93.1%</td><td><span class="badge b-warn">~ Near Forecast</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
 
-  <div class="obs-block">
-    <h3>HI! PEOPLE - DERBY AND THE HARVEST CORNER - COLCHESTER — NO ACTIVITY THIS WEEK, DECISION STILL OPEN</h3>
-    <p>Neither account ordered in Week 3, so there's nothing new to weigh — the formal tracked-account decision carried from prior weeks remains unresolved.</p>
-  </div>
+  <!-- SECTION 4 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">4</span><h2>Combined Total (WS + Retail)</h2></div>
+    <div class="sec-sub">Units · Revenue · vs Combined Target (H2 Forecast + Retail Demand) — August, full month</div>
+    <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Category</th><th>WS Units</th><th>WS Revenue</th><th>Retail Units</th><th>Retail Revenue</th><th>Total Units</th><th>Total Revenue</th><th>Combined Target</th><th>vs Target</th></tr></thead>
+      <tbody>
+        <tr><td>3.5g Flower</td><td class="num">5,085</td><td class="num">$71,593.65</td><td class="num">2,000</td><td class="num">$28,205.00</td><td class="num">7,085</td><td class="num">$99,798.65</td><td class="num">8,601</td><td class="num"><span class="badge b-bad">82.4%</span></td></tr>
+        <tr><td>7g Flower</td><td class="num">3,660</td><td class="num">$77,160.00</td><td class="num">3,322</td><td class="num">$72,616.00</td><td class="num">6,982</td><td class="num">$149,776.00</td><td class="num">4,856</td><td class="num"><span class="badge b-good">143.8%</span></td></tr>
+        <tr><td>1g Prerolls</td><td class="num">3,600</td><td class="num">$20,265.30</td><td class="num">2,460</td><td class="num">$13,800.00</td><td class="num">6,060</td><td class="num">$34,065.30</td><td class="num">4,147</td><td class="num"><span class="badge b-good">146.1%</span></td></tr>
+        <tr><td>0.5g 7pk PRJs</td><td class="num">960</td><td class="num">$17,280.00</td><td class="num">2,037</td><td class="num">$35,352.00</td><td class="num">2,997</td><td class="num">$52,632.00</td><td class="num">5,057</td><td class="num"><span class="badge b-bad">59.3%</span></td></tr>
+        <tr><td>1g Vapes (510)</td><td class="num">720</td><td class="num">$19,800.00</td><td class="num">330</td><td class="num">$9,075.00</td><td class="num">1,050</td><td class="num">$28,875.00</td><td class="num">3,098</td><td class="num"><span class="badge b-bad">33.9%</span></td></tr>
+        <tr><td>1g Disposables (AURA)</td><td class="num">690</td><td class="num">$20,700.00</td><td class="num">2,880</td><td class="num">$86,400.00</td><td class="num">3,570</td><td class="num">$107,100.00</td><td class="num">4,908</td><td class="num"><span class="badge b-warn">72.7%</span></td></tr>
+        <tr class="total"><td>TOTAL</td><td class="num">14,715</td><td class="num">$226,798.95</td><td class="num">13,029</td><td class="num">$245,448.00</td><td class="num">27,744</td><td class="num">$472,246.95</td><td class="num">30,667</td><td class="num"><span class="badge b-warn">90.5%</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
 
-  <div class="obs-block">
-    <h3>MONTH-TO-DATE PACE CHECK</h3>
-    <p>With 3 of 4 weeks in (~75% of the month elapsed), WS sits at 77.9% and Retail at 66.8% of their full Aug targets — WS is now running slightly ahead of the pace-line, Retail has closed most of the gap from last week but is still a bit behind. Combined attainment is 72.5%. One more strong week would put August in range of July's ~117% WS / ~114% Retail closing pace, though Retail will need the bigger push.</p>
-  </div>
+  <!-- SECTION 5 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">5</span><h2>Cultivation Inventory &amp; Availability</h2></div>
+    <div class="sec-sub">Snapshot as of 8/27/26 (CT Inventory Report) · Weeks of Supply = Available ÷ (Combined Aug Target ÷ 4 weeks)</div>
+    <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Category</th><th>WS Target</th><th>Retail Target</th><th>Combined Target</th><th>Available at Cultivation</th><th>Reserved / On Order</th><th>Weeks of Supply</th><th>Signal</th></tr></thead>
+      <tbody>
+        <tr><td>3.5g Flower</td><td class="num">4,409</td><td class="num">4,192</td><td class="num">8,601</td><td class="num">20,053</td><td class="num">210</td><td class="num">9.33</td><td><span class="badge b-warn">⚠ Overstocked</span></td></tr>
+        <tr><td>7g Flower</td><td class="num">2,231</td><td class="num">2,625</td><td class="num">4,856</td><td class="num">10,413</td><td class="num">150</td><td class="num">8.58</td><td><span class="badge b-warn">⚠ Overstocked</span></td></tr>
+        <tr><td>1g Prerolls</td><td class="num">2,214</td><td class="num">1,933</td><td class="num">4,147</td><td class="num">36,727</td><td class="num">420</td><td class="num">35.43</td><td><span class="badge b-warn">⚠ Overstocked</span></td></tr>
+        <tr><td>0.5g 7pk PRJs</td><td class="num">1,907</td><td class="num">3,150</td><td class="num">5,057</td><td class="num">5,315</td><td class="num">60</td><td class="num">4.20</td><td><span class="badge b-good">Balanced</span></td></tr>
+        <tr><td>1g Vapes (510)</td><td class="num">2,558</td><td class="num">540</td><td class="num">3,098</td><td class="num">3,090</td><td class="num">30</td><td class="num">3.99</td><td><span class="badge b-good">Balanced</span></td></tr>
+        <tr><td>1g Disposables (AURA)</td><td class="num">2,495</td><td class="num">2,413</td><td class="num">4,908</td><td class="num">6,551</td><td class="num">150</td><td class="num">5.34</td><td><span class="badge b-good">Balanced</span></td></tr>
+        <tr class="total"><td>TOTAL</td><td class="num">15,814</td><td class="num">14,853</td><td class="num">30,667</td><td class="num">82,149</td><td class="num">1,020</td><td class="num">10.71</td><td class="num"></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="footnote">
+      <b>Reserved/On Order note:</b> the 8/27 cultivation report's Reserved Quantity figures (210u 3.5g Flower, 150u 7g Flower, 420u 1g Prerolls, 60u 0.5g 7pk PRJs, 30u Vape 510, 150u AURA — 1,020u total) match line-for-line against the WS Pipeline order submitted for 9/1 delivery to INSA - Hartford, Higher Collective - Bridgeport, and High Profile - Hamden. Nothing carried forward from prior weeks.<br><br>
+      <b>Restricted-batch caveat:</b> headline Available figures still include sub-20% THC Restricted batches (retail-only, held off the WS menu). True WS-available inventory is <b>16,466u for 3.5g Flower</b> (excluding Bright Side, 3,587u), <b>24,515u for 1g Prerolls</b> (excluding Mint Condition, Homebody, Jai Alai, and — newly — one split of the Date Night batch), and only <b>~2,696u for 0.5g 7pk PRJs</b> (excluding Atomic Tangerine, Golden Hour, Mint Condition, and Early Bird) — true WS Weeks of Supply for 0.5g 7pk PRJs is roughly 2.1, materially tighter than the 4.20 headline Balanced signal. See Section 6 for the newly-discovered restricted batch.
+    </p>
+  </section>
 
-</section>
+  <!-- SECTION 6 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">6</span><h2>Strategic Observations</h2></div>
+    <div class="sec-sub">Forward-looking considerations · operations · channel planning · based on the full 4 weeks of August</div>
 
-<section>
-  <h2>Section 7 — Multi-Batch SKUs (On-Deck Tracking)</h2>
-  <div class="subtitle">SKUs currently carrying two active batches at cultivation · oldest batch sells through first, newest batch queued "On Deck" until it clears</div>
-  <table>
-    <tr><th>SKU</th><th>Active Batch (Qty)</th><th>Created</th><th>On-Deck Batch (Qty)</th><th>Created</th><th>Status</th></tr>
-    <tr>
-      <td>7g Flower — Early Bird</td><td>1,157u</td><td>07/31/26</td><td>3,410u</td><td>08/07/26</td>
-      <td><span class="batch-tag-ondeck">ON DECK</span></td>
-    </tr>
-    <tr>
-      <td>1g Preroll — Jai Alai</td><td>3,621u</td><td>05/07/26</td><td>3,798u</td><td>08/10/26</td>
-      <td><span class="batch-tag-ondeck">ON DECK</span></td>
-    </tr>
-    <tr>
-      <td>1g Preroll — Super Chill</td><td>1,278u</td><td>07/30/26</td><td>1,292u</td><td>08/10/26</td>
-      <td><span class="batch-tag-ondeck">ON DECK</span></td>
-    </tr>
-    <tr>
-      <td>1g Preroll — Umami OG</td><td>4,213u</td><td>07/21/26</td><td>3,535u</td><td>08/10/26</td>
-      <td><span class="batch-tag-ondeck">ON DECK</span></td>
-    </tr>
-    <tr>
-      <td>0.5g 7pk PRJ — Couch Surfer</td><td>3u</td><td>06/25/26</td><td>902u</td><td>08/10/26</td>
-      <td><span class="batch-tag-flag">CHECK</span></td>
-    </tr>
-    <tr>
-      <td>0.5g 7pk PRJ — Golden Hour</td><td colspan="4" style="text-align:center; color:#6B7280;">Now a single batch (1,042u) — prior two-batch anomaly no longer present</td>
-      <td><span class="batch-tag-resolved">RESOLVED</span></td>
-    </tr>
-  </table>
-  <p class="notes-cell" style="margin-top:10px;">
-    <strong>CHECK — Couch Surfer 0.5g 7pk:</strong> still carrying two batches (3u nearly-depleted + 902u), and the larger batch is still not flagged "On Deck" — same open item as the last two weeks. Worth confirming with cultivation whether this is intentional or a recurring flag miss.<br><br>
-    <strong>New this week:</strong> the 1g Preroll Jai Alai on-deck batch (3,798u, created 08/10) is flagged Restricted: Yes at 18.41% THC — consistent with the existing sub-20% retail-only convention for this category, no action needed, just noting it's part of why true WS-available 1g Preroll inventory (25,175u) runs well below the headline Available figure (35,665u).
-  </p>
-</section>
+    <div class="obs flag">
+      <h3>NEW: A DATE NIGHT 1G PREROLL BATCH NOW TESTS UNDER 20% THC</h3>
+      <p>One of the two active Date Night 1g Preroll batches (C0140000239, 1,812u, 19.79% THC) is now flagged Restricted in this week's cultivation report — the first time a 1g Preroll SKU beyond the already-known Mint Condition/Homebody/Jai Alai trio has crossed the line. The other Date Night 1g Preroll split (21.83% THC) remains WS-eligible. Worth confirming with cultivation whether this is a one-off testing result or a trend for future Date Night batches, since Date Night is a top mover across both 7g Flower and 1g Prerolls.</p>
+    </div>
 
-<div class="legend">
-  <span class="swatch" style="background:#1F7A4D;"></span>Balanced &nbsp;&nbsp;
-  <span class="swatch" style="background:#B45309;"></span>Overstocked (&gt;6 wks) &nbsp;&nbsp;
-  <span class="swatch" style="background:#B91C1C;"></span>Understocked (&lt;2 wks) &nbsp;&nbsp;
-  <span class="swatch" style="background:#FDEEE6;"></span>Week 3 (8/22) input column
+    <div class="obs">
+      <h3>FLOWER &amp; PREROLL SUPPLY REMAINS DEEP — DEMAND, NOT PRODUCTION, IS THE LEVER</h3>
+      <p>3.5g Flower, 7g Flower, and 1g Prerolls all closed August at 115-165% of their H2 Forecast targets while still carrying Overstocked Weeks of Supply (9.3, 8.6, and 35.4 respectively even before excluding restricted batches). The continued pause on new 1g Preroll production batches remains the right call; the more useful lever now is watching sell-through and SKU mix (Jai Alai and Date Night carried this week) rather than adding supply. 3.5g Flower's true WS-available figure (16,466u, excluding Bright Side) still comfortably covers demand.</p>
+    </div>
+
+    <div class="obs">
+      <h3>0.5g 7pk PRJs — TRUE WS-AVAILABLE SUPPLY IS THE TIGHTEST SPOT IN THE PLAN</h3>
+      <p>Headline Weeks of Supply reads Balanced (4.2), but with 4 of the category's 8 SKUs retail-only (Atomic Tangerine, Golden Hour, Mint Condition, Early Bird), true WS-available supply is roughly 2.1 weeks — the tightest true-supply position of any category, and it's the reason WS attainment closed the month at just 50.3% despite steady retail demand (64.7%, best of the constrained categories). Irish Goodbye finally showing real cultivation inventory (424u, resolving the zero-stock condition flagged in Weeks 1-3) is the one piece of good news; watch for whether the 6 batches Chris flagged as in labeling clear before mid-September.</p>
+    </div>
+
+    <div class="obs">
+      <h3>AURA — RETAIL IS PULLING AHEAD OF CONFIRMED WS AVAILABILITY</h3>
+      <p>Retail sold Sour Diesel (270u) and Pineapple Express (480u) this week even though WS orders only drew on the three previously-confirmed strains (Tahoe OG, Cake OG, Kush Mints) — worth confirming with Chris whether those two strains have in fact cleared brand registry for wholesale, since the Week 3 note left that as "hopeful, next week." If registry hasn't cleared, WS is leaving retail-validated demand on the table for two live SKUs.</p>
+    </div>
+
+    <div class="obs">
+      <h3>1g VAPES (510) — DEMAND CAME BACK, BUT THE CATEGORY IS STILL THE FURTHEST BEHIND</h3>
+      <p>WS Vape (510) rebounded to 180u after Week 3's zero week, but the category still closed August at just 28.1% of target — the weakest wholesale category in the plan alongside AURA (27.7%). The $27.50 WS / $55 retail price point flagged in Week 3 as above most of the competitive set (AGL, Rythm, Rodeo, Select, Loud, CTPharma) hasn't moved; a pricing or promo conversation for both Vape (510) and AURA remains worth having heading into September.</p>
+    </div>
+
+    <div class="obs">
+      <h3>ACCOUNT NOTES — NO ACTION NEEDED</h3>
+      <p>Clone Cannabis stayed within its agreed WS lane again this week (0.5g 7pk PRJs, Vape 510, and AURA only, across Meriden and Norwich) — no flower or 1g Preroll orders, consistent with their Springtime/Shaka arrangement. Zen Leaf, BUDR, and Curaleaf placed no WS orders this week; given their monthly budget caps, this reads as cap-driven rather than lost demand. HI! PEOPLE - Derby and The Harvest Corner - Colchester had no activity again this week (fourth straight week for Harvest Corner) — the formal tracked-account decision remains open and unchanged.</p>
+    </div>
+
+    <div class="obs">
+      <h3>AUGUST CLOSES AT ~90% COMBINED — RETAIL 3.5g FLOWER IS THE CLEAREST GAP INTO SEPTEMBER</h3>
+      <p>With all 4 weeks in, WS finished at 93.1% and Retail at 87.7% of their full Aug targets (Combined 90.5%) — both categories fell modestly short of July's ~117% WS / ~114% Retail closing pace. The gap is concentrated: Retail 3.5g Flower closed at just 47.7% of target (2,000 of 4,192u), the single largest shortfall in the plan, while WS Vape (510) and AURA remain the wholesale-side laggards. Worth flagging for the September plan rather than a mid-month correction, since the month is effectively closed.</p>
+    </div>
+  </section>
+
+  <p class="footnote">Prepared for Chris Nava, Wholesale Director · Draft build — Fri 8/28/26 · Sources: CT WS Product Sales 8.29.26.csv, CT RT Product Sales 8.29.26.csv, CT WS Pipeline Sales 9.5.26.csv, CT inventory_report_08_27_2026.csv · Not for distribution beyond Chris's review.</p>
 </div>
 
 </body>
